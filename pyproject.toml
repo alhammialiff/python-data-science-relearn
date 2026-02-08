@@ -1,0 +1,9 @@
+[project]
+name = "python-refresher"
+version = "0.1.0"
+description = "Python Refresher on Data Science"
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
