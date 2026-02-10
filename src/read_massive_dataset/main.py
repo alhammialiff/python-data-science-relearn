@@ -4,14 +4,17 @@ import random
 import os
 import multiprocessing
 from concurrent.futures import ProcessPoolExecutor
+from tabulate import tabulate
+import matplotlib.pyplot as plt
 
-PATH = './data/massiveDataset.csv'
+# PATH = './data/massiveDataset.csv'
+PLAYER_VALUATION_DATASET_PATH = './data/player_valuations.csv'
+PLAYER_DATASET_PATH = './data/players.csv'
 NEWPATH = './data/massiveDatasetMultipliedNonBatch.csv'
 NEWBATCHPATH = './data/massiveDatasetMultipliedBatch.csv'
 PARQUETPATH = './data/massiveDataset.parquet'
 NEWPARQUETPATH = './data/massiveDatasetMultiplied.parquet'
 MULTIPROCESSPATH = './data/massiveDatasetMultiprocess.csv'
-
 
 
 def createDummyDataset():
@@ -36,20 +39,19 @@ def createDummyDataset():
     print("Massive dataset saved to path: {}".format(PATH))
 
 
-
-def readCsv():
-
-    start = time.time()
-    df = pd.read_csv(PATH)
-    print("(1) Time taken to read massive dataset: {}secs".format(time.time() - start))
-    return df
-
-
 def multiplyColumnBy10(df):
 
     start = time.time()
     df["column1"] *=10
     print("(2) Time taken to Column1 x 10: {}secs".format(time.time() - start))
+    return df
+
+
+def readCsv(path: str) -> pd.DataFrame:
+
+    start = time.time()
+    df = pd.read_csv(path)
+    print("(1) Time taken to read massive dataset: {}secs".format(time.time() - start))
     return df
 
     
@@ -144,46 +146,80 @@ def multiprocessBatchProcessing(chunkSize=500000, maxWorkers= 4):
 
 def main():
     
-    datasetFileAlreadyExist = os.path.isfile(PATH)
+    # datasetFileAlreadyExist = os.path.isfile(PATH)
     
-    if not datasetFileAlreadyExist:
-        createDummyDataset()
+    # if not datasetFileAlreadyExist:
+        # createDummyDataset()
     
     '''
     (1. Read-Process-Write) Without batch processing and Parquet
     '''
     # (Read) Read CSV in pandas dataframe
-    df = readCsv()
+    playerDf = readCsv(PLAYER_DATASET_PATH)
+    playerValuationDf = readCsv(PLAYER_VALUATION_DATASET_PATH)
+
+    # Inner join - keep only matching rows
+    newDf = pd.merge(playerDf, playerValuationDf, on="player_id", how="inner")
+
+    # Filter - Market value of Left footed players 
+    moSalahValuation = newDf[newDf["name"] == "Mohamed Salah"]
+    viniJrValuation = newDf[newDf["name"] == "Vinicius Junior"]
+    luisDiazValuation = newDf[newDf["name"] == "Luis Díaz"]
+    chiesaValuation = newDf[newDf["name"] == "Federico Chiesa"]
+
+    # Convert dates to datetime and sort
+    moSalahValuation["date"] = pd.to_datetime(moSalahValuation["date"])
+    viniJrValuation["date"] = pd.to_datetime(viniJrValuation["date"])
+    luisDiazValuation["date"] = pd.to_datetime(luisDiazValuation["date"])
+    chiesaValuation["date"] = pd.to_datetime(chiesaValuation["date"])
+
+    moSalahValuation = moSalahValuation.sort_values("date")
+    viniJrValuation = viniJrValuation.sort_values("date")
+    luisDiazValuation = luisDiazValuation.sort_values("date")
+    chiesaValuation = chiesaValuation.sort_values("date")
 
     # Create a copy of the dataframe for performance verification
-    dfCopy = df.copy()
+    # dfCopy = df.copy()
 
     # (Process) Apply x10 on all rows in Column1   
-    updatedDf = multiplyColumnBy10(dfCopy)
+    # updatedDf = multiplyColumnBy10(dfCopy)
 
     # (Write) Apply updated dataframe into a new CSV file
-    start = time.time()
-    updatedDf.to_csv(NEWPATH)  
-    print("(3) Time taken to write new massive dataset: {}secs".format(time.time() - start))
+    # start = time.time()
+    # updatedDf.to_csv(NEWPATH)  
+    # print("(3) Time taken to write new massive dataset: {}secs".format(time.time() - start))
 
     '''
     (2. Read-Process-Write) With batch processing only
     '''
-    batchProcessing()
+    # batchProcessing()
 
     '''
     (3. Read-Process-Write) With batch processing and Parquet
     '''
-    batchProcessingParquet()
+    # batchProcessingParquet()
 
     '''
     (4. Read-Process-Write) With batch processing in multiprocessing approach
     '''
-    multiprocessBatchProcessing(chunkSize=500000, maxWorkers=4)
+    # multiprocessBatchProcessing(chunkSize=500000, maxWorkers=4)
 
     # (Debug to verify performance)
-    print(df.head())
-    print(updatedDf.head())
+    # print(tabulate(leftFooterPlayersDf,headers='keys',tablefmt='psql',showindex=False))
+
+    plt.figure(figsize=(10,6))
+    plt.plot(moSalahValuation["date"], moSalahValuation["market_value_in_eur_y"], label="Mo Salah", marker='o',linewidth=2)
+    plt.plot(viniJrValuation["date"], viniJrValuation["market_value_in_eur_y"], label="Vini Jr", marker='s',linewidth=2)
+    plt.plot(luisDiazValuation["date"], luisDiazValuation["market_value_in_eur_y"], label="Luis Díaz", marker='s',linewidth=2)
+    plt.plot(chiesaValuation["date"], chiesaValuation["market_value_in_eur_y"], label="Chiesa", marker='s',linewidth=2)
+    plt.xlabel("Year")
+    plt.ylabel("Market Value (EUR)")
+    plt.title("Mohamed Salah - Market Value Trajectory")
+    plt.xticks(rotation=45)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+
 
 '''
 Outputs
