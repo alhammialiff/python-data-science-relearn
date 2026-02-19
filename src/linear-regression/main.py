@@ -174,7 +174,7 @@ def train_random_forest(df):
         X, y, test_size= 0.2, random_state=42
     )
 
-    # Create and train Random Forest
+    # Create Random Forest
     # n_estimators: number of tree (more = better but slower)
     # max_depth: prevents overfitting
     # random_state: for reproducibilty
@@ -339,9 +339,14 @@ def compare_error_distribution(y_test_lr, y_pred_lr, y_test_rf, y_pred_rf):
     """
     Compare the distribution of prediction errors between models
     Shows which model makes more consistent predictions
+    Why we analyze residuals (or errors):
+
+        Distribution - Ideally centered at 0 (no systematic bias)
+        Spread - Narrower distribution = more consistent predictions
+        Patterns - Random scatter is good; patterns indicate model issues
     """
     
-    # Calculate errors
+    # Calculate errors (matrix subtraction => subtracting row by row to get residual values)
     lr_errors = y_test_lr - y_pred_lr
     rf_errors = y_test_rf - y_pred_rf
     
