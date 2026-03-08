@@ -142,9 +142,11 @@ def distance_pattern_to_string(pattern, text):
 
     for i in range (len(text) - k + 1):
         
+        # The sliding window along the sequence (text)
         window = text[i:i+k]
         distance = hamming_distance(pattern, window)
 
+        # Keep finding the minimum hamming distance as the window slides
         if distance < min_distance:
             min_distance = distance
     
@@ -169,7 +171,7 @@ def distance_pattern_to_strings(pattern, listOfSequences):
         
         # IMPORTANT
         # d(pattern, listOfSequence)
-        # Sum the hamming distance between the pattern and each sequence
+        # Sum of the minimum hamming distance between the pattern and each sequence
         total_distance += distance_pattern_to_string(pattern, sequence)
     
     return total_distance
