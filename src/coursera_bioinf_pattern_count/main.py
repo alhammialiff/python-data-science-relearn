@@ -1,3 +1,5 @@
+import itertools
+
 
 SEQUENCE_DATASET_PATH = './data/coursera_bioinf_dataset_4.txt'
 
@@ -69,6 +71,7 @@ def frequent_words(text, k):
     return frequent_patterns
 
 
+
 '''
 Faster Frequent Words Count 
     Time Complexity:
@@ -100,6 +103,124 @@ def faster_frequent_words(text, k):
     return frequent_patterns
 
 
+
+'''
+Hamming Distance
+    Input:
+        p, q - two equal length strings
+    Return:
+        Int - number of mismatches
+'''
+def hamming_distance(p, q):
+    
+    count = 0
+
+    # Compare using zip
+    for char_p, char_q in zip(p, q):
+
+        # Increase counter (hamming distance) if not equal
+        if char_p != char_q:
+            count +=1
+    
+    return count
+
+
+
+'''
+Distance Pattern to String
+    Input: 
+        pattern - k-mer pattern
+        text - a DNA string
+    Return:
+        Int - minimum hamming distance of pattern across text
+    
+'''
+def distance_pattern_to_string(pattern, text):
+    
+    k = len(pattern)
+    min_distance = float('inf')
+
+    for i in range (len(text) - k + 1):
+        
+        window = text[i:i+k]
+        distance = hamming_distance(pattern, window)
+
+        if distance < min_distance:
+            min_distance = distance
+    
+    return min_distance
+
+
+
+'''
+Distance Pattern to Strings
+    Input: 
+        pattern - k-mer pattern
+        dna - list of DNA string
+    Return:
+        Int - sum of minimum distances across all DNA strings
+'''
+def distance_pattern_to_strings(pattern, listOfSequences):
+    
+    total_distance = 0
+    
+    # Iterate each sequence in the list and find its distance
+    for sequence in listOfSequences:
+        
+        # IMPORTANT
+        # d(pattern, listOfSequence)
+        # Sum the hamming distance between the pattern and each sequence
+        total_distance += distance_pattern_to_string(pattern, sequence)
+    
+    return total_distance
+
+
+
+'''
+Median String Search
+    Time Complexity:
+        O(4^k tnk)
+        k is -mer
+        t is no. of sequence
+        n is length of sequence
+    Input:
+        dna - list of DNA strings
+        k   - length of k-mer
+    Return: 
+        k-mer string that is the median string
+
+'''
+def median_string_search(listOfSequences, k):
+    
+    alphabet = 'ACGT'
+    median = None
+    best_distance = float('inf')
+    medianList = list()
+
+    # itertools.product generates all possible combi of ACGT 
+    for kmer_tuple in itertools.product(alphabet, repeat=k):
+
+        # (AAA...AA, AAA...AC ... TTT...TT) 
+        kmer = ''.join(kmer_tuple)
+        distance = distance_pattern_to_strings(kmer, listOfSequences)
+
+        if distance < best_distance:
+            best_distance = distance
+            median = kmer
+
+            medianList = []
+            medianList.append(kmer)
+
+        elif distance == best_distance:
+            medianList.append(kmer)
+
+    return median, medianList
+    
+
+
+    
+
+
 def main():
 
     ''' Sample Test '''
@@ -118,6 +239,17 @@ def main():
     most_frequent_word = faster_frequent_words(text,4)
     print(f"Frequent Word: {most_frequent_word}\n")
 
+    ''' Median String Search '''
+    listOfSequences = [
+        'CTCGATGAGTAGGAAAGTAGTTTCACTGGGCGAACCACCCCGGCGCTAATCCTAGTGCCC',
+        'GCAATCCTACCCGAGGCCACATATCAGTAGGAACTAGAACCACCACGGGTGGCTAGTTTC',
+        'GGTGTTGAACCACGGGGTTAGTTTCATCTATTGTAGGAATCGGCTTCAAATCCTACACAG'
+    ]
+
+    medianString, medianList = median_string_search(listOfSequences, 7)
+
+    print(f"Median String {medianString}")
+    print(f"Median String List {medianList}")
 
 if __name__ == "__main__":
     main()
