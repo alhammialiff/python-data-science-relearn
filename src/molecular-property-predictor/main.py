@@ -175,7 +175,11 @@ def performDuplicateAnalysis(refinedData):
         cleanedData = refinedData[~refinedData["Compound ID"].duplicated(keep=False)]
 
         # Step 2: Append the averaged (fixed) row back in 
-        cleanData = pd.concat([cleanedData, fixedDupe], ignore_index = True)
+        cleanedData = pd.concat([cleanedData, fixedDupe], ignore_index = True)
+
+        # Debug
+        print(f"Fixed {len(duplicates)} duplicate rows → merged into {len(fixedDupe)} rows")
+        print("Cleaned dataset shape:", cleanedData.shape)
 
         return cleanedData
     
