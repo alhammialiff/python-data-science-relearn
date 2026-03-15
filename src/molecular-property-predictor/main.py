@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from rdkit import Chem
-from rdkit.Chem import AllChem
+from rdkit.Chem import AllChem, Descriptors
 from rdkit.Chem.rdFingerprintGenerator import GetMorganGenerator
 
 from sklearn.ensemble import RandomForestRegressor
@@ -121,7 +121,7 @@ def investigateCategoricalVariableDistribution(refinedDf):
     Returns:
         list: A list of 1024 bits (0s and 1s) representing the molecule's fingerprint.
     """
-def smilesToFingerprint(smiles):
+def smilesToFingerprintPlusPhysicochemFeatures(smiles):
 
     # Convert the SMILES string into an RDKit molecule object
     mol = Chem.MolFromSmiles(smiles)
@@ -129,10 +129,10 @@ def smilesToFingerprint(smiles):
     # Create a Morgan fingerprint generator with:
     # - radius = 2 (captures atom neighborhoods up to 2 bonds away)
     # - fpSize = 1024 (output vector length)
-    generator = GetMorganGenerator(radius = 2, fpSize = 1024)
+    generator = GetMorganGenerator(radius = 3, fpSize = 2048)
     
     # Generate the fingerprint and convert to a plain Python list
-    fingerprint = generator.GetFingerprintAsNumPy(mol)
+    fingerprint = list(generator.GetFingerprintAsNumPy(mol))
 
     # [Learning - Molecular Fingerprint]
     # In our context, a Molecular Fingerprint is a fixed-length binary vector (1024 bits) 
@@ -142,8 +142,18 @@ def smilesToFingerprint(smiles):
     # print("Fingerprint (numpy)")
     # print(f"{fingerprint[:20]} \n")
     
-    
-    return list(fingerprint)
+    # [Feature Engineering] Append physicochemical descriptors to fingerprint to give it more features
+    descriptors = [
+        Descriptors.MolWt(mol),           # Molecular weight
+        Descriptors.MolLogP(mol),         # Lipophilicity (known to correlate with solubility)
+        Descriptors.NumHDonors(mol),      # Hydrogen bond donors
+        Descriptors.NumHAcceptors(mol),   # Hydrogen bond acceptors
+        Descriptors.TPSA(mol),            # Topological polar surface area
+        Descriptors.NumRotatableBonds(mol) # Molecular flexibility
+    ]
+
+    # Combine fingerprint + descriptors into one feature vector
+    return fingerprint + descriptors
 
 def performDuplicateAnalysis(refinedData):
 
@@ -187,7 +197,7 @@ def performDuplicateAnalysis(refinedData):
 def performTrainTestSplit(refinedData):
 
     # Input: Molecular fingerprint
-    X = refinedData["SMILES"].apply(smilesToFingerprint)
+    X = refinedData["SMILES"].apply(smilesToFingerprintPlusPhysicochemFeatures)
     X = list(X)
 
     # Target: Solubility
