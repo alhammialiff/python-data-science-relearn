@@ -289,6 +289,9 @@ def splitDatasetAndFitModel(dfModel):
 
     return X, y, Xtest, yTest, yPred, mae, rmse, r2, rfModel
 
+'''
+Evaluate Model Performance more accurately by going through K-Fold CV
+'''
 def evaluateModelPerformance(X, y, yTest, yPred, rfModel):
 
     print("Running 5-Fold Cross-Validation...")
@@ -336,7 +339,7 @@ def main():
     investigateSalaryBasedOnCountryAndRole(refinedDf1)
 
     # DPP - 1. Preprocessing and Feature Encoding
-    dfModel =dataPreprocessing(refinedDf1)
+    dfModel = dataPreprocessing(refinedDf1)
 
     # Split and Fit
     X, y, Xtest, yTest, yPred, mae, rmse, r2, rfModel = splitDatasetAndFitModel(dfModel)
